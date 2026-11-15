@@ -50,7 +50,7 @@ The SyncLight app and this tool both drive the strip, so there are two modes:
 
 | Mode | Behavior |
 |---|---|
-| `--takeover` (recommended) | Quits SyncLight when Claude starts working, and relaunches it (back to screen sync) 2 minutes after work stops |
+| `--takeover` (recommended) | Quits SyncLight when Claude starts working, and relaunches it (back to screen sync) 30 seconds after the green "done" display ends |
 | `--no-takeover` (default) | Pauses the LED display while SyncLight is running and warns at session start |
 
 ## Configuration
@@ -62,7 +62,7 @@ Edit `~/.claude/synclight/config.json` (picked up within 5 seconds).
 | `lamps` | `54` | Number of LEDs |
 | `takeover` | `false` | Automatic switching described above |
 | `done_seconds` | `180` | How long to show green after a response |
-| `restore_seconds` | `120` | Delay before handing the strip back to SyncLight |
+| `restore_seconds` | `30` | Delay after the green "done" display before handing the strip back to SyncLight |
 | `colors` | | RGB for `working` / `waiting` / `done` / `idle` |
 
 ## Manual use

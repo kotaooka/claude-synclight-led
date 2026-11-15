@@ -50,7 +50,7 @@ LED は SyncLight アプリと取り合いになるため、次の 2 つのモ�
 
 | モード | 動き |
 |---|---|
-| `--takeover`（おすすめ） | Claude が作業を始めると SyncLight を自動で終了し、作業が終わって 2 分たつと起動し直して画面同期に戻します |
+| `--takeover`（おすすめ） | Claude が作業を始めると SyncLight を自動で終了し、完了（緑）の表示が終わって 30 秒たつと起動し直して画面同期に戻します |
 | `--no-takeover`（初期値） | SyncLight が起動している間は LED 表示を止めます。セッション開始時に警告を出します |
 
 ## 設定
@@ -62,7 +62,7 @@ LED は SyncLight アプリと取り合いになるため、次の 2 つのモ�
 | `lamps` | `54` | LED の灯数 |
 | `takeover` | `false` | 上記の自動切り替え |
 | `done_seconds` | `180` | 完了（緑）を表示する秒数 |
-| `restore_seconds` | `120` | 作業が止まってから SyncLight に戻すまでの秒数 |
+| `restore_seconds` | `30` | 完了（緑）の表示が終わってから SyncLight に戻すまでの秒数 |
 | `colors` | | `working` / `waiting` / `done` / `idle` の RGB |
 
 ## 手動で使う
