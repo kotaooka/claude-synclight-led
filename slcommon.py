@@ -126,15 +126,64 @@ def kill_synclight():
     pids = synclight_pids()
     path = next((p for p in map(process_path, pids) if p), "")
     if pids:
-        subprocess.run(["taskkill", "/F", "/T", "/IM", SYNCLIGHT_EXE_NAME],
-                       capture_output=True, creationflags=NO_WINDOW)
+        try:
+            subprocess.run(["taskkill", "/F", "/T", "/IM", SYNCLIGHT_EXE_NAME],
+                           capture_output=True, creationflags=NO_WINDOW, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            pass  # 管理者権限で動いている等。常駐側はSyncLightに譲る
     return path
 
 
+def find_synclight_exe():
+    """アンインストール情報（レジストリ）から SyncLight.exe の場所を探す。"""
+    import winreg
+    roots = [(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+             (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+             (winreg.HKEY_LOCAL_MACHINE, r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall")]
+    for root, sub in roots:
+        try:
+            base = winreg.OpenKey(root, sub)
+        except OSError:
+            continue
+        with base:
+            for i in range(winreg.QueryInfoKey(base)[0]):
+                try:
+                    with winreg.OpenKey(base, winreg.EnumKey(base, i)) as k:
+                        if "synclight" not in str(winreg.QueryValueEx(k, "DisplayName")[0]).lower():
+                            continue
+                        cands = []
+                        for name in ("DisplayIcon", "InstallLocation"):
+                            try:
+                                cands.append(str(winreg.QueryValueEx(k, name)[0]))
+                            except OSError:
+                                pass
+                except OSError:
+                    continue
+                for c in cands:
+                    c = c.split(",")[0].strip().strip('"')
+                    p = Path(c)
+                    if p.is_dir():
+                        p = p / SYNCLIGHT_EXE_NAME
+                    if p.name.lower() == SYNCLIGHT_EXE_NAME.lower() and p.exists():
+                        return str(p)
+    return ""
+
+
 def launch_synclight(path):
-    if path and Path(path).exists():
-        subprocess.Popen([path], cwd=str(Path(path).parent), creationflags=DETACHED,
-                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, close_fds=True)
-        return True
-    return False
+    """SyncLight を起動する。失敗しても例外は投げず、(成否, 内容) を返す。"""
+    try:
+        candidates = [p for p in (path, find_synclight_exe()) if p]
+    except Exception:
+        candidates = [path] if path else []
+    error = f"SyncLight.exe が見つかりません（候補: {candidates}）"
+    for p in candidates:
+        if not Path(p).exists():
+            continue
+        try:
+            subprocess.Popen([p], cwd=str(Path(p).parent), creationflags=DETACHED,
+                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL, close_fds=True)
+            return True, p
+        except OSError as e:
+            error = f"{p}: {e}"
+    return False, error

@@ -107,9 +107,9 @@ def main():
             last_rgb = None
         if killed_path and not active and (state == "off" or now - inactive_since > cfg["restore_seconds"]):
             dev.close()
-            exe = cfg.get("synclight_exe") or killed_path
-            log(f"SyncLightを再起動: {exe} -> {C.launch_synclight(exe)}")
-            killed_path = ""
+            ok, info = C.launch_synclight(cfg.get("synclight_exe") or killed_path)
+            log(f"SyncLightを再起動: {info}" if ok else f"SyncLightを起動できませんでした: {info}")
+            killed_path = ""  # 失敗しても何度も試さない
         yielding = C.synclight_running()  # SyncLightが動いている間はLEDを譲る
 
         if yielding:
@@ -140,7 +140,8 @@ def main():
             pass
         dev.close()
     if killed_path:
-        C.launch_synclight(cfg.get("synclight_exe") or killed_path)
+        ok, info = C.launch_synclight(cfg.get("synclight_exe") or killed_path)
+        log(f"SyncLightを再起動: {info}" if ok else f"SyncLightを起動できませんでした: {info}")
     C.STOP_FLAG.unlink(missing_ok=True)
     log("exit")
     return 0
