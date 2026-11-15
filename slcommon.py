@@ -180,7 +180,8 @@ def launch_synclight(path):
         if not Path(p).exists():
             continue
         try:
-            subprocess.Popen([p], cwd=str(Path(p).parent), creationflags=DETACHED,
+            # "--startup 1" はSyncLight自身の自動起動と同じ引数。ウィンドウを出さずトレイに常駐する
+            subprocess.Popen([p, "--startup", "1"], cwd=str(Path(p).parent), creationflags=DETACHED,
                              stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                              stderr=subprocess.DEVNULL, close_fds=True)
             return True, p
