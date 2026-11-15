@@ -3,7 +3,7 @@
 使い方:
   python synclight_led.py <state|#RRGGBB|off> [lamps]
   state: working / waiting / done / idle / off
-Claude Code のフックから呼ばれる想定。stdin のフックJSONは読み捨てる。
+手動テスト用のCLI兼ライブラリ（常駐プログラムから Device クラスを使う）。
 
 プロトコル (SyncLight app.asar より解析):
   "RB" | len | seq | 0x86(setSectionLED) | [start, R, G, B, end]... | sum%256
@@ -100,34 +100,71 @@ def build_section_packet(sections, seq):
     return bytes(pkt)
 
 
-def send(packet):
-    path = find_device_path()
-    if not path:
-        raise RuntimeError("SyncLight LED (1A86:FE07) が見つかりません")
-    fh = k32.CreateFileW(path, 0xC0000000, 0x3, None, 3, 0, None)  # RW, share RW, OPEN_EXISTING
-    if fh == INVALID_HANDLE:
-        raise ctypes.WinError(ctypes.get_last_error())
-    try:
+class Device:
+    """LEDへのHIDハンドルを保持する。アニメーション用に開きっぱなしで使える。"""
+
+    def __init__(self, lamps=LAMPS_DEFAULT):
+        self.lamps = lamps
+        self.fh = None
+        self.out_len = 65
+        self.seq = (os.getpid() % 253) + 1
+
+    def open(self):
+        if self.fh is not None:
+            return
+        path = find_device_path()
+        if not path:
+            raise RuntimeError("SyncLight LED (1A86:FE07) が見つかりません")
+        fh = k32.CreateFileW(path, 0xC0000000, 0x3, None, 3, 0, None)  # RW, share RW, OPEN_EXISTING
+        if fh == INVALID_HANDLE:
+            raise ctypes.WinError(ctypes.get_last_error())
         pp = ctypes.c_void_p(); caps = HIDP_CAPS()
-        out_len = 65
         if hid.HidD_GetPreparsedData(fh, ctypes.byref(pp)):
             hid.HidP_GetCaps(pp, ctypes.byref(caps)); hid.HidD_FreePreparsedData(pp)
-            out_len = caps.OutputReportByteLength or 65
-        chunk = out_len - 1
-        for i in range(0, len(packet), chunk):
-            report = bytes([0]) + packet[i:i + chunk]
-            report = report.ljust(out_len, b"\0")
-            written = wt.DWORD()
-            if not k32.WriteFile(fh, report, len(report), ctypes.byref(written), None):
-                raise ctypes.WinError(ctypes.get_last_error())
-    finally:
-        k32.CloseHandle(fh)
+            self.out_len = caps.OutputReportByteLength or 65
+        self.fh = fh
+
+    def close(self):
+        if self.fh is not None:
+            k32.CloseHandle(self.fh)
+            self.fh = None
+
+    def send(self, packet):
+        self.open()
+        chunk = self.out_len - 1
+        try:
+            for i in range(0, len(packet), chunk):
+                report = (bytes([0]) + packet[i:i + chunk]).ljust(self.out_len, b"\0")
+                written = wt.DWORD()
+                if not k32.WriteFile(self.fh, report, len(report), ctypes.byref(written), None):
+                    raise ctypes.WinError(ctypes.get_last_error())
+        except OSError:
+            self.close()  # 抜き差し等。次回に開き直す
+            raise
+
+    def sections(self, sections):
+        self.seq = self.seq % 254 + 1
+        self.send(build_section_packet(list(sections) + [(self.lamps + 1, 0, 0, 0, 254)], self.seq))
+
+    def color(self, rgb):
+        r, g, b = (max(0, min(255, int(v))) for v in rgb)
+        self.sections([(1, r, g, b, self.lamps)])
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+
+def send(packet):
+    with Device() as d:
+        d.send(packet)
 
 
 def set_color(rgb, lamps=LAMPS_DEFAULT):
-    r, g, b = rgb
-    seq = (os.getpid() % 253) + 1
-    send(build_section_packet([(1, r, g, b, lamps), (lamps + 1, 0, 0, 0, 254)], seq))
+    with Device(lamps) as d:
+        d.color(rgb)
 
 
 def parse(arg):
