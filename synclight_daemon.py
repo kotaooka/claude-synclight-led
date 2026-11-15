@@ -77,7 +77,6 @@ def main():
     dev = None
     last_rgb, last_send = None, 0.0
     killed_path = ""            # 自分が終了させたSyncLightのパス
-    inactive_since = time.time()
     off_since = None
     cfg = C.load_config()
     cfg_time = 0.0
@@ -90,10 +89,6 @@ def main():
             dev = L.Device(cfg["lamps"])
         state = overall_state(read_sessions(now), now, cfg)
         active = state in ("working", "waiting", "done")
-        if active:
-            inactive_since = None
-        elif inactive_since is None:
-            inactive_since = now
 
         # ---- SyncLight との共存 ----
         if cfg["takeover"] and active and C.synclight_running():
@@ -105,7 +100,7 @@ def main():
             log(f"SyncLightを終了: {path}")
             time.sleep(1.0)
             last_rgb = None
-        if killed_path and not active and (state == "off" or now - inactive_since > cfg["restore_seconds"]):
+        if killed_path and not active:  # 完了表示が終わったらすぐSyncLightに戻す
             dev.close()
             ok, info = C.launch_synclight(cfg.get("synclight_exe") or killed_path)
             log(f"SyncLightを再起動: {info}" if ok else f"SyncLightを起動できませんでした: {info}")

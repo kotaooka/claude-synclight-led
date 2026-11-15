@@ -18,7 +18,6 @@ DEFAULT_CONFIG = {
     "lamps": 54,               # LEDの灯数
     "takeover": False,         # True: Claude作業中はSyncLightを終了し、終わったら起動し直す
     "done_seconds": 180,       # 完了(緑)を表示する秒数。その後は待機色
-    "restore_seconds": 30,     # takeover時、完了表示が終わってからSyncLightに戻すまでの秒数
     "synclight_exe": "",       # SyncLight.exe のパス（空なら終了時に記録したものを使う）
     "colors": {
         "working": [255, 90, 20],
