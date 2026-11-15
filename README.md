@@ -1,6 +1,6 @@
 # claude-synclight-led
 
-[Claude Code](https://claude.com/claude-code) の動作状況を、Robobloq の **SyncLight** 対応 LED テープ（モニター背面ライトなど）に表示します。
+[Claude Code](https://claude.com/claude-code) の動作状況を、Robobloq の [**SyncLight**](https://quiklight.robobloq.com/sync-lights) 対応 LED テープ（モニター背面ライトなど）に表示します。
 
 | Claude Code の状態 | フック | LED |
 |---|---|---|
