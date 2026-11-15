@@ -63,6 +63,7 @@ Edit `~/.claude/synclight/config.json` (picked up within 5 seconds).
 | `takeover` | `false` | Automatic switching described above |
 | `done_seconds` | `180` | How long to show green after a response |
 | `colors` | | RGB for `working` / `waiting` / `done` / `idle` |
+| `debug` | `false` | When `true`, logs each hook call with a timestamp to `hook.log` |
 
 ## Manual use
 

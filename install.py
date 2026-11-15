@@ -18,7 +18,7 @@ import slcommon as C  # noqa: E402
 
 SETTINGS = Path.home() / ".claude" / "settings.json"
 FILES = ["synclight_led.py", "slcommon.py", "synclight_daemon.py", "claude_hook.py"]
-EVENTS = ["SessionStart", "UserPromptSubmit", "PostToolUse", "Notification", "Stop", "SessionEnd"]
+EVENTS = ["SessionStart", "UserPromptSubmit", "PostToolUse", "PermissionRequest", "Notification", "Stop", "SessionEnd"]
 MARK = "synclight"  # 旧バージョン(synclight_led.py直接呼び出し)のフックも消す
 
 
@@ -73,7 +73,7 @@ def install(takeover):
     cmd = f'"{Path(sys.executable).as_posix()}" -I "{(C.HOME / "claude_hook.py").as_posix()}"'
     for ev in EVENTS:
         group = {"hooks": [{"type": "command", "command": cmd, "timeout": 5}]}
-        if ev == "PostToolUse":
+        if ev in ("PostToolUse", "PermissionRequest"):  # ツール単位のイベントは全ツール対象
             group = {"matcher": "*", **group}
         hooks.setdefault(ev, []).append(group)
     save(settings)

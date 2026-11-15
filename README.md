@@ -63,6 +63,7 @@ LED は SyncLight アプリと取り合いになるため、次の 2 つのモ�
 | `takeover` | `false` | 上記の自動切り替え |
 | `done_seconds` | `180` | 完了（緑）を表示する秒数 |
 | `colors` | | `working` / `waiting` / `done` / `idle` の RGB |
+| `debug` | `false` | `true` にすると、フックが呼ばれた時刻を `hook.log` に記録 |
 
 ## 手動で使う
 

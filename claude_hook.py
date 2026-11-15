@@ -14,7 +14,9 @@ import slcommon as C  # noqa: E402
 def state_for(event, data):
     if event in ("UserPromptSubmit", "PostToolUse"):
         return "working"
-    if event == "Notification":
+    if event == "PermissionRequest":  # 許可ダイアログの表示と同時に呼ばれる
+        return "waiting"
+    if event == "Notification":  # 許可待ちの通知は少し遅れて届くので保険として使う
         kind = data.get("notification_type", "")
         msg = data.get("message", "").lower()
         if kind == "permission_prompt" or "permission" in msg:
@@ -47,6 +49,9 @@ def main():
     sid = "".join(ch for ch in str(data.get("session_id", "default")) if ch.isalnum() or ch in "-_") or "default"
     C.SESSIONS.mkdir(parents=True, exist_ok=True)
     path = C.SESSIONS / f"{sid}.json"
+    if C.load_config().get("debug"):  # 調査用: フックが呼ばれた時刻を記録
+        with open(C.HOME / "hook.log", "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%H:%M:%S')}.{int(time.time() * 1000) % 1000:03d} {event} {sid[:8]}\n")
 
     if event == "SessionEnd":
         path.unlink(missing_ok=True)
