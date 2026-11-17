@@ -36,6 +36,7 @@ python install.py --takeover
 - ファイルは `~/.claude/synclight/` にコピーされ、`~/.claude/settings.json` にフックが追加されます（元のファイルは `settings.json.bak` に保存）。
 - フックはインストールに使った Python のフルパスで登録されるので、`python` コマンドが PATH にない環境でも動きます。
 - このPCで動くすべての Claude Code セッション（CLI・デスクトップアプリの Code タブ・IDE 拡張）に適用されます。新しく開いたセッションから有効になります。
+- クラウドで動くセッション（claude.ai/code のクラウド環境など）は、このPCのUSBに届かないため対象外です。
 - 更新するときは `git pull` してから、もう一度 `python install.py` を実行してください。
 
 アンインストール:

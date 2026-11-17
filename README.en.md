@@ -36,6 +36,7 @@ python install.py --takeover
 - Files are copied to `~/.claude/synclight/` and hooks are added to `~/.claude/settings.json` (the original is saved as `settings.json.bak`).
 - Hooks use the full path of the Python that ran the installer, so they work even if `python` is not on PATH.
 - Applies to every Claude Code session on the PC (CLI, desktop app Code tab, IDE extensions), starting with newly opened sessions.
+- Cloud sessions (e.g. the claude.ai/code cloud environment) are not supported, since they cannot reach this PC's USB.
 - To update, `git pull` and run `python install.py` again.
 
 Uninstall:
