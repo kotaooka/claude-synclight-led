@@ -76,7 +76,13 @@ def main():
     log("start")
     dev = None
     last_rgb, last_send = None, 0.0
-    killed_path = ""            # 自分が終了させたSyncLightのパス
+    # 自分（または前に動いていた常駐プログラム）が終了させたSyncLightのパス
+    try:
+        killed_path = C.KILLED_MARK.read_text(encoding="utf-8").strip()
+    except OSError:
+        killed_path = ""
+    if killed_path:
+        log(f"前回終了させたSyncLightを引き継ぎ: {killed_path}")
     off_since = None
     cfg = C.load_config()
     cfg_time = 0.0
@@ -94,6 +100,7 @@ def main():
         if cfg["takeover"] and active and C.synclight_running():
             path = C.kill_synclight()
             killed_path = path or cfg.get("synclight_exe") or killed_path or "?"
+            C.KILLED_MARK.write_text(killed_path, encoding="utf-8")
             if path and path != cfg.get("synclight_exe"):
                 cfg["synclight_exe"] = path
                 C.save_config({k: v for k, v in cfg.items()})
@@ -105,6 +112,7 @@ def main():
             ok, info = C.launch_synclight(cfg.get("synclight_exe") or killed_path)
             log(f"SyncLightを再起動: {info}" if ok else f"SyncLightを起動できませんでした: {info}")
             killed_path = ""  # 失敗しても何度も試さない
+            C.KILLED_MARK.unlink(missing_ok=True)
         yielding = C.synclight_running()  # SyncLightが動いている間はLEDを譲る
 
         if yielding:
@@ -137,6 +145,7 @@ def main():
     if killed_path:
         ok, info = C.launch_synclight(cfg.get("synclight_exe") or killed_path)
         log(f"SyncLightを再起動: {info}" if ok else f"SyncLightを起動できませんでした: {info}")
+        C.KILLED_MARK.unlink(missing_ok=True)
     C.STOP_FLAG.unlink(missing_ok=True)
     log("exit")
     return 0

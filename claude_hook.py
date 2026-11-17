@@ -1,5 +1,6 @@
 """Claude Code のフックから呼ばれる。セッションの状態をファイルに書き、
 常駐プログラムが動いていなければ起動する。USBには触らないので軽い。"""
+import base64
 import json
 import os
 import subprocess
@@ -34,10 +35,21 @@ def ensure_daemon():
         return
     exe = Path(sys.executable)
     pyw = exe.with_name("pythonw.exe")
-    subprocess.Popen([str(pyw if pyw.exists() else exe), "-I",
-                      str(Path(__file__).with_name("synclight_daemon.py"))],
-                     creationflags=C.DETACHED | C.NO_WINDOW, close_fds=True,
-                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    cmdline = f'"{pyw if pyw.exists() else exe}" -I "{Path(__file__).with_name("synclight_daemon.py")}"'
+    # フックはClaude Codeの「ジョブ」の中で動いており、普通に起動した子プロセスは
+    # Claudeのプロセスが終わると道連れで強制終了される（ジョブからの離脱も禁止されている）。
+    # WMI経由で起動すると、ジョブの外・同じユーザー・同じデスクトップで動く。
+    ps = ("Invoke-CimMethod -ClassName Win32_Process -MethodName Create "
+          "-Arguments @{CommandLine='" + cmdline.replace("'", "''") + "'} | Out-Null")
+    enc = base64.b64encode(ps.encode("utf-16-le")).decode()
+    popen = dict(close_fds=True, stdin=subprocess.DEVNULL,
+                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        # PowerShellは DETACHED_PROCESS だと何もせず終了するので、CREATE_NO_WINDOW で起動する
+        subprocess.Popen(["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", enc],
+                         creationflags=C.NO_WINDOW | 0x200, **popen)
+    except OSError:  # PowerShellがない環境では従来どおり（Claude終了時に一緒に止まる）
+        subprocess.Popen(cmdline, creationflags=C.DETACHED, **popen)
 
 
 def main():

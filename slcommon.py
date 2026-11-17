@@ -11,6 +11,7 @@ SESSIONS = HOME / "sessions"
 CONFIG = HOME / "config.json"
 STOP_FLAG = HOME / "stop"
 LOG = HOME / "daemon.log"
+KILLED_MARK = HOME / "synclight_killed"  # 常駐プログラムがSyncLightを終了させた印（中身はパス）
 MUTEX_NAME = "Local\\ClaudeSyncLightDaemon"
 SYNCLIGHT_EXE_NAME = "SyncLight.exe"
 
